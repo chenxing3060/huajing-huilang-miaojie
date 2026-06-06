@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>花境回廊 · 喵街微世界 — 互动原型</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --blue:#0a2463;
+  --dark:#1a1a2e;
+  --neon:#00f5a0;
+  --gold:#f7d44a;
+  --rose:#e8a0bf;
+  --purple:#6c3fa0;
+  --silver:#c0c5d0;
+  --bg:#0d0d1a;
+  --card:rgba(16,20,40,0.85);
+  --text:#e8eaf0;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes glow{0%,100%{box-shadow:0 0 15px rgba(0,245,160,0.3)}50%{box-shadow:0 0 30px rgba(0,245,160,0.6)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes evolve{0%{transform:scale(1) rotate(0deg);filter:brightness(1)}50%{transform:scale(1.3) rotate(180deg);filter:brightness(1.8)}100%{transform:scale(1) rotate(360deg);filter:brightness(1)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes sparkle{0%,100%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1)}}
+html,body{height:100%;font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;touch-action:manipulation;user-select:none}
+#app{width:100%;height:100%;max-width:430px;margin:0 auto;position:relative;overflow:hidden;background:linear-gradient(180deg,#0d0d1a 0%,#12102a 40%,#1a0a3a 70%,#0d0d1a 100%)}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.screen.active{display:flex}
+.screen::-webkit-scrollbar{display:none}
+
+/* Status bar */
+.status-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px 8px;font-size:11px;color:rgba(255,255,255,0.5);position:relative;z-index:10}
+.status-bar .time{font-weight:600}
+.status-icons{display:flex;gap:4px;align-items:center}
+.status-icons span{font-size:10px}
+
+/* Bottom nav */
+.bottom-nav{position:absolute;bottom:0;left:0;width:100%;display:flex;justify-content:space-around;align-items:center;padding:8px 0 env(safe-area-inset-bottom,8px);background:rgba(10,12,30,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border:none;background:none;color:rgba(255,255,255,0.4);font-size:10px;cursor:pointer;transition:all 0.2s}
+.nav-item.active{color:var(--neon)}
+.nav-item .nav-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.nav-item span{font-size:9px;letter-spacing:0.3px}
+
+/* Splash */
+#splash{justify-content:center;align-items:center;background:linear-gradient(135deg,#0d0d1a 0%,#1a0a3a 50%,#0a2463 100%);z-index:200}
+.splash-content{text-align:center;animation:fadeInUp 0.8s ease-out}
+.splash-icon{width:80px;height:80px;margin:0 auto 20px;background:conic-gradient(from 0deg,var(--neon),var(--blue),var(--purple),var(--neon));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;animation:glow 2s infinite;position:relative}
+.splash-icon::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(0,245,160,0.3);animation:pulse 2s infinite}
+.splash-title{font-size:24px;font-weight:700;background:linear-gradient(90deg,var(--neon),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.splash-sub{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:8px}
+.splash-miao{font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:30px}
+.splash-btn{background:linear-gradient(135deg,var(--neon),#00c97a);border:none;color:var(--dark);padding:14px 48px;border-radius:30px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.3s;animation:glow 2s infinite}
+.splash-btn:active{transform:scale(0.95)}
+
+/* Home */
+.home-header{background:linear-gradient(180deg,rgba(10,36,99,0.6) 0%,transparent 100%);padding:20px 20px 40px;position:relative}
+.home-greeting{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:2px}
+.home-title{font-size:22px;font-weight:700;margin-bottom:4px}
+.home-title em{font-style:normal;background:linear-gradient(90deg,var(--neon),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.home-energy{display:flex;align-items:center;gap:8px;margin-top:10px;background:rgba(0,245,160,0.1);border:1px solid rgba(0,245,160,0.2);border-radius:20px;padding:6px 14px;width:fit-content;font-size:13px}
+.home-energy .energy-dot{width:8px;height:8px;border-radius:50%;background:var(--neon);animation:pulse 1.5s infinite}
+.home-energy .energy-num{color:var(--neon);font-weight:700}
+
+/* Crystal pet display */
+.pet-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 20px;position:relative;min-height:280px}
+.pet-circle{width:180px;height:180px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s}
+.pet-circle.touched{transform:scale(0.92)}
+.pet-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(0,245,160,0.2);animation:glow 3s infinite}
+.pet-ring.inner{inset:8px;border-color:rgba(108,63,160,0.3);animation-delay:0.5s}
+.pet-emoji{font-size:90px;position:relative;z-index:2;transition:all 0.3s;animation:float 4s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(0,245,160,0.3))}
+.pet-name{font-size:18px;font-weight:600;margin-top:12px;color:var(--gold)}
+.pet-level{font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px}
+.pet-level span{color:var(--neon);font-weight:600}
+.pet-mood{font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;transition:all 0.3s}
+
+/* Pet evolution stages */
+.pet-emoji.stage-1{font-size:70px}
+.pet-emoji.stage-2{font-size:80px}
+.pet-emoji.stage-3{font-size:90px;filter:drop-shadow(0 0 30px rgba(247,212,74,0.4))}
+.pet-emoji.stage-4{font-size:100px;filter:drop-shadow(0 0 40px rgba(232,160,191,0.5))}
+
+/* Action buttons */
+.actions{display:flex;gap:12px;padding:10px 20px 90px;flex-wrap:wrap;justify-content:center}
+.action-btn{flex:1;min-width:80px;padding:12px 8px;border:1px solid rgba(255,255,255,0.1);border-radius:16px;background:var(--card);color:var(--text);font-size:12px;text-align:center;cursor:pointer;transition:all 0.2s;backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center;gap:4px}
+.action-btn .action-icon{font-size:22px}
+.action-btn:active{transform:scale(0.92);background:rgba(0,245,160,0.1);border-color:var(--neon)}
+.action-btn.primary{background:linear-gradient(135deg,rgba(0,245,160,0.2),rgba(0,201,122,0.1));border-color:rgba(0,245,160,0.3)}
+
+/* Quest screen */
+.screen-header{display:flex;align-items:center;padding:44px 20px 16px;gap:12px;position:sticky;top:0;z-index:10;background:rgba(13,13,26,0.95);backdrop-filter:blur(20px)}
+.screen-header h2{font-size:18px;font-weight:700;flex:1}
+.back-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.back-btn:active{transform:scale(0.9)}
+
+.quest-list{padding:10px 20px 100px;display:flex;flex-direction:column;gap:12px}
+.quest-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.3s;animation:fadeInUp 0.3s ease-out}
+.quest-card.completed{opacity:0.5;border-color:var(--neon)}
+.quest-card:active{transform:scale(0.97)}
+.quest-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.quest-body{flex:1}
+.quest-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.quest-desc{font-size:11px;color:rgba(255,255,255,0.4)}
+.quest-reward{font-size:11px;color:var(--neon);font-weight:600;white-space:nowrap}
+.quest-check{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;transition:all 0.3s}
+.quest-card.completed .quest-check{border-color:var(--neon);background:var(--neon);color:var(--dark)}
+
+/* Evolution screen */
+.evolution-scene{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+.evo-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:8px;background:linear-gradient(90deg,var(--neon),var(--gold),var(--rose));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.evo-sub{font-size:13px;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:30px}
+.evo-pet{font-size:100px;animation:evolve 1.5s ease-in-out}
+.evo-bar{width:80%;max-width:300px;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;margin:20px 0;overflow:hidden}
+.evo-bar-fill{height:100%;background:linear-gradient(90deg,var(--neon),var(--gold));border-radius:3px;transition:width 0.5s}
+.evo-btn{background:linear-gradient(135deg,var(--neon),#00c97a);border:none;color:var(--dark);padding:14px 40px;border-radius:30px;font-size:15px;font-weight:700;cursor:pointer;margin-top:20px}
+.evo-btn:active{transform:scale(0.95)}
+
+/* Check-in */
+.checkin-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:10px 20px}
+.checkin-day{width:100%;aspect-ratio:1;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.3);gap:2px}
+.checkin-day.done{border-color:var(--neon);background:rgba(0,245,160,0.1);color:var(--neon)}
+.checkin-day.today{border-color:var(--gold);background:rgba(247,212,74,0.1);color:var(--gold);animation:glow 2s infinite}
+.checkin-day .day-num{font-size:14px;font-weight:700}
+.checkin-status{padding:10px 20px;text-align:center;font-size:13px;color:rgba(255,255,255,0.5)}
+.checkin-btn{display:block;margin:10px auto 20px;background:linear-gradient(135deg,var(--neon),#00c97a);border:none;color:var(--dark);padding:14px 40px;border-radius:30px;font-size:15px;font-weight:700;cursor:pointer}
+.checkin-btn:active{transform:scale(0.95)}
+.checkin-btn:disabled{opacity:0.3;cursor:not-allowed}
+
+/* Toast */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(13,13,26,0.95);border:1px solid rgba(0,245,160,0.3);padding:20px 30px;border-radius:20px;text-align:center;z-index:300;animation:fadeInUp 0.3s ease-out;max-width:300px;backdrop-filter:blur(20px)}
+.toast-icon{font-size:40px;margin-bottom:10px;display:block}
+.toast-msg{font-size:14px;color:var(--text);margin-bottom:4px}
+.toast-sub{font-size:11px;color:rgba(255,255,255,0.4)}
+
+/* Share */
+.share-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:250;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(5px)}
+.share-overlay.active{display:flex}
+.share-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px env(safe-area-inset-bottom,20px);width:100%;max-width:430px;animation:fadeInUp 0.3s ease-out}
+.share-sheet h3{font-size:16px;text-align:center;margin-bottom:16px}
+.share-options{display:flex;justify-content:center;gap:20px;margin-bottom:20px}
+.share-option{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+.share-option .share-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;color:white}
+.share-option span{font-size:11px;color:rgba(255,255,255,0.5)}
+.share-cancel{width:100%;padding:14px;border:none;border-radius:14px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);font-size:14px;cursor:pointer}
+.share-cancel:active{transform:scale(0.97)}
+
+/* Floating particles */
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.particle{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--neon);animation:float 6s ease-in-out infinite;opacity:0.3}
+
+/* Scrollable content area */
+.scroll-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll-content::-webkit-scrollbar{display:none}
+
+/* Crystal inventory */
+.inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px 20px 100px}
+.inv-item{aspect-ratio:1;border-radius:14px;border:1px solid rgba(255,255,255,0.06);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:all 0.2s}
+.inv-item:active{transform:scale(0.92)}
+.inv-item .inv-emoji{font-size:28px}
+.inv-item .inv-name{font-size:9px;color:rgba(255,255,255,0.5);text-align:center}
+.inv-item .inv-rarity{font-size:7px;padding:1px 6px;border-radius:8px}
+.rarity-common{background:rgba(192,197,208,0.2);color:var(--silver)}
+.rarity-rare{background:rgba(0,245,160,0.2);color:var(--neon)}
+.rarity-epic{background:rgba(108,63,160,0.3);color:#b07ae0}
+.rarity-legend{background:rgba(247,212,74,0.2);color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- Particles background -->
+<div class="particles" id="particles"></div>
+
+<!-- SPLASH SCREEN -->
+<div class="screen active" id="splash">
+  <div class="splash-content">
+    <div class="splash-icon">✦</div>
+    <div class="splash-title">花境回廊</div>
+    <div class="splash-sub">Aeternum · 喵街微世界</div>
+    <div class="splash-miao">银泰喵街 AI 互动玩法</div>
+    <button class="splash-btn" onclick="enterApp()">进入花境</button>
+  </div>
+</div>
+
+<!-- HOME SCREEN -->
+<div class="screen" id="home">
+  <div class="status-bar">
+    <span class="time" id="statusTime">12:00</span>
+    <div class="status-icons"><span>●●●●○</span></div>
+  </div>
+  <div class="scroll-content">
+    <div class="home-header">
+      <div class="home-greeting" id="homeGreeting">探员，早上好</div>
+      <div class="home-title">你的 <em>晶灵</em> 在等你</div>
+      <div class="home-energy">
+        <span class="energy-dot"></span>
+        源芯能量 <span class="energy-num" id="energyDisplay">0</span>
+      </div>
+    </div>
+
+    <div class="pet-area" onclick="petTouch()">
+      <div class="pet-circle" id="petCircle">
+        <div class="pet-ring"></div>
+        <div class="pet-ring inner"></div>
+        <div class="pet-emoji stage-1" id="petEmoji">🥚</div>
+      </div>
+      <div class="pet-name" id="petName">未孵化</div>
+      <div class="pet-level">Lv.<span id="petLevel">1</span> · <span id="petStageName">晶灵蛋</span></div>
+      <div class="pet-mood" id="petMood">点击你的晶灵互动 ✦</div>
+    </div>
+
+    <div class="actions" id="actionButtons">
+      <button class="action-btn primary" onclick="showScreen('quest')">
+        <span class="action-icon">📋</span>
+        <span>每日任务</span>
+      </button>
+      <button class="action-btn" onclick="showScreen('checkin')">
+        <span class="action-icon">📅</span>
+        <span>签到</span>
+      </button>
+      <button class="action-btn" onclick="feedPet()">
+        <span class="action-icon">🍎</span>
+        <span>喂养</span>
+      </button>
+      <button class="action-btn" onclick="showScreen('inventory')">
+        <span class="action-icon">💎</span>
+        <span>收藏</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="showScreen('home')">
+      <span class="nav-icon">🏠</span><span>回廊</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('quest')">
+      <span class="nav-icon">📋</span><span>任务</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('checkin')">
+      <span class="nav-icon">📅</span><span>签到</span>
+    </button>
+    <button class="nav-item" onclick="showShare()">
+      <span class="nav-icon">📤</span><span>分享</span>
+    </button>
+  </div>
+</div>
+
+<!-- QUEST SCREEN -->
+<div class="screen" id="quest">
+  <div class="screen-header">
+    <button class="back-btn" onclick="showScreen('home')">‹</button>
+    <h2>每日任务</h2>
+  </div>
+  <div class="scroll-content">
+    <div class="quest-list" id="questList"></div>
+  </div>
+</div>
+
+<!-- CHECK-IN SCREEN -->
+<div class="screen" id="checkin">
+  <div class="screen-header">
+    <button class="back-btn" onclick="showScreen('home')">‹</button>
+    <h2>每日签到</h2>
+  </div>
+  <div class="scroll-content">
+    <div class="checkin-status" id="checkinStatus">连续签到 0 天</div>
+    <div class="checkin-grid" id="checkinGrid"></div>
+    <button class="checkin-btn" id="checkinBtn" onclick="doCheckin()">签到领能量</button>
+  </div>
+</div>
+
+<!-- INVENTORY SCREEN -->
+<div class="screen" id="inventory">
+  <div class="screen-header">
+    <button class="back-btn" onclick="showScreen('home')">‹</button>
+    <h2>我的晶灵</h2>
+  </div>
+  <div class="scroll-content">
+    <div class="inv-grid" id="invGrid"></div>
+  </div>
+</div>
+
+<!-- EVOLUTION SCREEN (modal-like, full screen) -->
+<div class="screen" id="evolution">
+  <div class="evolution-scene">
+    <div class="evo-title">✦ 进化之光 ✦</div>
+    <div class="evo-sub" id="evoSub">你的晶灵正在蜕变...</div>
+    <div class="evo-pet" id="evoPet">🐣</div>
+    <div class="evo-bar"><div class="evo-bar-fill" id="evoBar" style="width:0%"></div></div>
+    <button class="evo-btn" id="evoBtn" onclick="startEvolution()">开始进化</button>
+  </div>
+</div>
+
+<!-- SHARE OVERLAY -->
+<div class="share-overlay" id="shareOverlay">
+  <div class="share-sheet">
+    <h3>分享你的晶灵 ✦</h3>
+    <div class="share-options">
+      <div class="share-option" onclick="shareTo('wechat')">
+        <div class="share-icon" style="background:#07c160">💬</div>
+        <span>微信好友</span>
+      </div>
+      <div class="share-option" onclick="shareTo('moments')">
+        <div class="share-icon" style="background:#07c160">🌐</div>
+        <span>朋友圈</span>
+      </div>
+      <div class="share-option" onclick="shareTo('xiaohongshu')">
+        <div class="share-icon" style="background:#ff2442">📕</div>
+        <span>小红书</span>
+      </div>
+      <div class="share-option" onclick="shareTo('save')">
+        <div class="share-icon" style="background:var(--purple)">💾</div>
+        <span>保存图片</span>
+      </div>
+    </div>
+    <button class="share-cancel" onclick="hideShare()">取消</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" style="display:none">
+  <span class="toast-icon" id="toastIcon">✨</span>
+  <div class="toast-msg" id="toastMsg"></div>
+  <div class="toast-sub" id="toastSub"></div>
+</div>
+
+</div>
+
+<script>
+// ============ Game State ============
+const STATE_KEY = 'aeternum_save';
+let G = null;
+
+const CRYSTALS = [
+  {id:'c1',name:'晶灵石',emoji:'💎',rarity:'common',desc:'基础能量结晶'},
+  {id:'c2',name:'星尘花',emoji:'🌸',rarity:'common',desc:'花境回廊原生植物'},
+  {id:'c3',name:'源芯碎片',emoji:'🔷',rarity:'rare',desc:'稀有能量碎片'},
+  {id:'c4',name:'月影叶',emoji:'🌿',rarity:'rare',desc:'月影银辉滋养的灵叶'},
+  {id:'c5',name:'流光晶核',emoji:'💠',rarity:'epic',desc:'高阶晶灵核心'},
+  {id:'c6',name:'时空钥',emoji:'🗝️',rarity:'epic',desc:'解锁秘境的关键'},
+  {id:'c7',name:'回廊之心',emoji:'💖',rarity:'legend',desc:'花境回廊的传说圣物'},
+  {id:'c8',name:'创世辉光',emoji:'🔆',rarity:'legend',desc:'Aeternum起源之光'},
+];
+
+const PET_STAGES = [
+  {level:1,name:'晶灵蛋',emoji:'🥚',mood:'沉睡中...',energyNeeded:50,nextName:'萌芽期'},
+  {level:2,name:'萌芽',emoji:'🌱',mood:'好奇地打量着花境',energyNeeded:120,nextName:'绽放期'},
+  {level:3,name:'绽放',emoji:'🌸',mood:'快乐地在你身边飞舞',energyNeeded:250,nextName:'蜕变期'},
+  {level:4,name:'蜕变',emoji:'🦋',mood:'拥有神秘力量',energyNeeded:500,nextName:'完全体'},
+  {level:5,name:'完全体',emoji:'✨',mood:'花境回廊的守护者',energyNeeded:99999,nextName:'MAX'},
+];
+
+const QUESTS = [
+  {id:'q1',icon:'👀',title:'浏览今日推荐',desc:'逛逛喵街首页好物推荐',reward:20,check:()=>true},
+  {id:'q2',icon:'❤️',title:'收藏一件好物',desc:'把喜欢的商品加入收藏',reward:15,check:()=>true},
+  {id:'q3',icon:'📤',title:'分享给好友',desc:'邀请好友一起养晶灵',reward:30,check:()=>true},
+  {id:'q4',icon:'📍',title:'查看门店活动',desc:'了解附近银泰门店优惠',reward:20,check:()=>true},
+  {id:'q5',icon:'🍎',title:'喂养晶灵',desc:'给你的晶灵喂食',reward:10,check:()=>true},
+];
+
+const GREETINGS = ['探员，早上好 ✦','花境的晨光为你点亮 ✦','你的晶灵在等你 ✦','今日花境能量充盈 ✦','回廊探员，欢迎回来 ✦'];
+
+const INTERACTIONS = [
+  '晶灵蹭了蹭你的手指 ✦',
+  '晶灵开心地转了个圈 ✦',
+  '你感受到了花境的温暖能量 ✦',
+  '晶灵低声哼唱着花境之歌 ✦',
+  '晶灵轻轻落在你的肩头 ✦',
+  '源芯能量在你指尖流动 ✦',
+];
+
+function defaultState() {
+  const today = new Date().toDateString();
+  return {
+    energy: 10,
+    petLevel: 1,
+    petExp: 0,
+    totalFeed: 0,
+    totalTouch: 0,
+    lastCheckin: today,
+    checkinCount: 0,
+    checkinDays: [],
+    questsDone: [],
+    questsResetDay: today,
+    inventory: ['c1','c2'],
+    crystalsFound: [],
+    petName: '未孵化',
+    unlockedEvo: false,
+  };
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if (raw) {
+      G = JSON.parse(raw);
+      return;
+    }
+  } catch(e){}
+  G = defaultState();
+  saveGame();
+}
+
+function saveGame() {
+  localStorage.setItem(STATE_KEY, JSON.stringify(G));
+}
+
+function updateUI() {
+  // Energy
+  const energyEl = document.getElementById('energyDisplay');
+  if (energyEl) energyEl.textContent = G.energy;
+
+  // Pet display
+  const stage = PET_STAGES[G.petLevel - 1] || PET_STAGES[0];
+  const petEmoji = document.getElementById('petEmoji');
+  const petName = document.getElementById('petName');
+  const petLevel = document.getElementById('petLevel');
+  const petStageName = document.getElementById('petStageName');
+  const petMood = document.getElementById('petMood');
+
+  if (petEmoji) {
+    petEmoji.textContent = stage.emoji;
+    petEmoji.className = 'pet-emoji stage-' + G.petLevel;
+  }
+  if (petName) petName.textContent = G.petName || stage.name;
+  if (petLevel) petLevel.textContent = G.petLevel;
+  if (petStageName) petStageName.textContent = stage.name;
+  if (petMood) petMood.textContent = stage.mood;
+
+  // Greeting
+  const greetEl = document.getElementById('homeGreeting');
+  if (greetEl) {
+    greetEl.textContent = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+  }
+
+  // Check if evolution available
+  const nextStage = PET_STAGES[G.petLevel];
+  if (nextStage && G.energy >= nextStage.energyNeeded && G.petLevel < 5) {
+    const evoBtn = document.getElementById('evoBtn');
+    if (evoBtn) evoBtn.style.display = 'block';
+  }
+}
+
+// ============ Screen Navigation ============
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navMap = {home:0, quest:1, checkin:2};
+  const idx = navMap[id];
+  if (idx !== undefined) {
+    const items = document.querySelectorAll('.nav-item');
+    if (items[idx]) items[idx].classList.add('active');
+  }
+
+  if (id === 'quest') renderQuests();
+  if (id === 'checkin') renderCheckin();
+  if (id === 'inventory') renderInventory();
+  if (id === 'home') updateUI();
+}
+
+// ============ Pet Interactions ============
+let petAnimating = false;
+function petTouch() {
+  if (petAnimating) return;
+  petAnimating = true;
+  const circle = document.getElementById('petCircle');
+  circle.classList.add('touched');
+  G.totalTouch++;
+
+  // Random energy gain
+  const gain = Math.floor(Math.random() * 3) + 1;
+  G.energy += gain;
+
+  // Show interaction text
+  const mood = document.getElementById('petMood');
+  const msg = INTERACTIONS[Math.floor(Math.random() * INTERACTIONS.length)];
+  mood.textContent = msg + ' +' + gain + '能量';
+
+  updateUI();
+  saveGame();
+
+  setTimeout(() => {
+    circle.classList.remove('touched');
+    petAnimating = false;
+  }, 200);
+}
+
+function feedPet() {
+  if (G.energy < 5) {
+    showToast('能量不足','去做任务获取更多源芯能量吧 ✦','⚡');
+    return;
+  }
+  G.energy -= 5;
+  G.totalFeed++;
+  G.petExp += 10;
+
+  // Check for level up
+  const stage = PET_STAGES[G.petLevel - 1];
+  if (stage && G.petExp >= stage.energyNeeded && G.petLevel < 5) {
+    // Ready to evolve
+    showToast('进化条件已满足','你的晶灵渴望蜕变 ✦','✨');
+    G.unlockedEvo = true;
+    updateUI();
+    saveGame();
+    return;
+  }
+
+  const gain = Math.floor(Math.random() * 8) + 5;
+  G.energy += gain;
+
+  const mood = document.getElementById('petMood');
+  mood.textContent = '晶灵开心地享用美食 +' + gain + '能量 ✦';
+
+  updateUI();
+  saveGame();
+  showToast('喂养成功','晶灵很开心 +' + gain + '能量','🍎');
+}
+
+// ============ Evolution ============
+let evolving = false;
+
+function showEvolution() {
+  if (G.petLevel >= 5) {
+    showToast('已达最大形态','你的晶灵已是最强形态 ✦','✨');
+    return;
+  }
+  const nextStage = PET_STAGES[G.petLevel];
+  if (G.energy < nextStage.energyNeeded) {
+    showToast('能量不足','需要 ' + nextStage.energyNeeded + ' 能量才能进化','⚡');
+    return;
+  }
+  document.getElementById('evoPet').textContent = PET_STAGES[G.petLevel - 1].emoji;
+  document.getElementById('evoSub').textContent = '你的晶灵正在蜕变为「' + nextStage.name + '」...';
+  document.getElementById('evoBar').style.width = '0%';
+  document.getElementById('evoBtn').textContent = '开始进化';
+  evolving = false;
+  showScreen('evolution');
+}
+
+function startEvolution() {
+  if (evolving) return;
+  evolving = true;
+
+  const nextStage = PET_STAGES[G.petLevel];
+  const btn = document.getElementById('evoBtn');
+  const bar = document.getElementById('evoBar');
+  const pet = document.getElementById('evoPet');
+  const sub = document.getElementById('evoSub');
+
+  btn.disabled = true;
+  btn.textContent = '进化中...';
+  sub.textContent = '花境能量正在汇聚...';
+
+  let progress = 0;
+  const evoStages = ['🐣','🐛','🦋','💫','✨'];
+  let emojiIdx = 0;
+  G.energy -= nextStage.energyNeeded;
+
+  const interval = setInterval(() => {
+    progress += 5;
+    bar.style.width = Math.min(progress, 100) + '%';
+
+    if (progress % 20 === 0 && emojiIdx < evoStages.length - 1) {
+      emojiIdx++;
+      pet.textContent = evoStages[emojiIdx];
+      sub.textContent = ['能量灌入...','形态重构中...','基因序列重组...','花境共鸣...','蜕变完成！'][emojiIdx-1] || '蜕变完成！';
+    }
+
+    if (progress >= 100) {
+      clearInterval(interval);
+      // Evolution complete!
+      G.petLevel++;
+      G.petExp = 0;
+      if (G.petName === '未孵化' || G.petName === '晶灵蛋') {
+        const names = ['星尘','月华','烁光','灵汐','玄晶','岚影'];
+        G.petName = names[Math.floor(Math.random() * names.length)] + '晶灵';
+      }
+      G.unlockedEvo = false;
+
+      // Give evolution reward crystals
+      const rewardCrystals = ['c3','c4','c5'];
+      const reward = rewardCrystals[Math.min(G.petLevel - 2, rewardCrystals.length - 1)];
+      if (!G.inventory.includes(reward) || Math.random() > 0.5) G.inventory.push(reward);
+
+      saveGame();
+
+      setTimeout(() => {
+        btn.disabled = false;
+        evolving = false;
+        pet.textContent = PET_STAGES[G.petLevel - 1].emoji;
+        sub.textContent = '✦ ' + G.petName + ' 已进入「' + PET_STAGES[G.petLevel - 1].name + '」形态 ✦';
+        btn.textContent = '✦ 进化完成 ✦';
+
+        showToast('进化成功！', G.petName + ' 已进入全新形态 ✦', '✨');
+        updateUI();
+
+        setTimeout(() => {
+          showScreen('home');
+        }, 2000);
+      }, 500);
+    }
+  }, 60);
+}
+
+// ============ Quests ============
+function renderQuests() {
+  const container = document.getElementById('questList');
+  if (!container) return;
+
+  // Reset quests daily
+  const today = new Date().toDateString();
+  if (G.questsResetDay !== today) {
+    G.questsDone = [];
+    G.questsResetDay = today;
+    saveGame();
+  }
+
+  const dailyQuests = QUESTS.slice(0, 3);
+  container.innerHTML = dailyQuests.map(q => {
+    const done = G.questsDone.includes(q.id);
+    return '<div class="quest-card' + (done ? ' completed' : '') + '" onclick="doQuest(\'' + q.id + '\')">' +
+      '<div class="quest-icon" style="background:rgba(0,245,160,0.1)">' + q.icon + '</div>' +
+      '<div class="quest-body">' +
+        '<div class="quest-title">' + q.title + '</div>' +
+        '<div class="quest-desc">' + q.desc + '</div>' +
+      '</div>' +
+      '<div class="quest-reward">+' + q.reward + '</div>' +
+      '<div class="quest-check">' + (done ? '✓' : '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function doQuest(id) {
+  if (G.questsDone.includes(id)) return;
+  G.questsDone.push(id);
+  const q = QUESTS.find(x => x.id === id);
+  if (q) {
+    G.energy += q.reward;
+    G.petExp += 5;
+    showToast('任务完成', q.title + ' +' + q.reward + '能量', '✓');
+  }
+  saveGame();
+  renderQuests();
+  updateUI();
+}
+
+// ============ Check-in ============
+function renderCheckin() {
+  const grid = document.getElementById('checkinGrid');
+  const status = document.getElementById('checkinStatus');
+  const btn = document.getElementById('checkinBtn');
+  if (!grid) return;
+
+  const today = new Date().toDateString();
+  const alreadyChecked = G.lastCheckin === today;
+
+  if (status) status.textContent = '连续签到 ' + G.checkinCount + ' 天';
+  if (btn) btn.disabled = alreadyChecked;
+
+  const days = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push(d);
+  }
+
+  grid.innerHTML = days.map(d => {
+    const ds = d.toDateString();
+    const isToday = ds === today;
+    const checked = G.checkinDays.includes(ds);
+    const dayNum = d.getDate();
+    const bonus = [7,14,21,30].includes(G.checkinCount + (isToday && !checked ? 1 : 0)) ? '🎁' : '';
+    let cls = 'checkin-day';
+    if (checked) cls += ' done';
+    if (isToday && !checked) cls += ' today';
+    return '<div class="' + cls + '"><span class="day-num">' + dayNum + '</span>' + (bonus || '') + '</div>';
+  }).join('');
+}
+
+function doCheckin() {
+  const today = new Date().toDateString();
+  if (G.lastCheckin === today) {
+    showToast('今日已签到','明天再来吧 ✦','📅');
+    return;
+  }
+
+  G.lastCheckin = today;
+  G.checkinDays.push(today);
+  G.checkinCount++;
+
+  // Check for streak bonuses
+  let bonus = 0;
+  let bonusMsg = '';
+  const streakBonuses = {7:'基因序列',14:'限定栖息地装饰',21:'稀有晶灵蛋',30:'传说晶灵碎片'};
+  if (streakBonuses[G.checkinCount]) {
+    bonus = 50;
+    bonusMsg = ' + ' + streakBonuses[G.checkinCount];
+    // Give special crystals on milestones
+    if (G.checkinCount === 7) G.inventory.push('c3');
+    if (G.checkinCount === 14) G.inventory.push('c4');
+    if (G.checkinCount === 21) G.inventory.push('c6');
+    if (G.checkinCount === 30) G.inventory.push('c7');
+  }
+
+  const baseEnergy = 20;
+  const streakBonus = Math.min(G.checkinCount * 2, 20);
+  const totalEnergy = baseEnergy + streakBonus + bonus;
+  G.energy += totalEnergy;
+
+  saveGame();
+  renderCheckin();
+  updateUI();
+
+  if (bonus > 0) {
+    showToast('✦ 里程碑奖励 ✦', '连续签到 ' + G.checkinCount + ' 天！获得 ' + totalEnergy + ' 能量' + bonusMsg, '🎉');
+  } else {
+    showToast('签到成功', '+' + totalEnergy + ' 能量（连续加成 +' + streakBonus + '）', '📅');
+  }
+}
+
+// ============ Inventory ============
+function renderInventory() {
+  const container = document.getElementById('invGrid');
+  if (!container) return;
+
+  const owned = G.inventory.map(id => CRYSTALS.find(c => c.id === id)).filter(Boolean);
+  if (owned.length === 0) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 0;color:rgba(255,255,255,0.3);font-size:13px;">还没有收集到晶灵 ✦<br>完成签到和任务获取</div>';
+    return;
+  }
+  container.innerHTML = owned.map(c => {
+    const rarityClass = 'rarity-' + c.rarity;
+    return '<div class="inv-item">' +
+      '<div class="inv-emoji">' + c.emoji + '</div>' +
+      '<div class="inv-name">' + c.name + '</div>' +
+      '<div class="inv-rarity ' + rarityClass + '">' + c.rarity + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ============ Share ============
+function showShare() {
+  document.getElementById('shareOverlay').classList.add('active');
+}
+
+function hideShare() {
+  document.getElementById('shareOverlay').classList.remove('active');
+}
+
+function shareTo(platform) {
+  hideShare();
+  const pet = PET_STAGES[G.petLevel - 1];
+  const msgs = {
+    wechat: '💬 已复制分享文案 · 去微信粘贴给好友吧！',
+    moments: '🌐 已保存分享图片 · 去朋友圈发布吧！',
+    xiaohongshu: '📕 「我的晶灵 ' + (G.petName || pet.name) + ' 在@喵街 花境回廊中成长到 Lv.' + G.petLevel + ' 啦！每天养晶灵太治愈了 ✦」',
+    save: '💾 晶灵进化图已保存到相册',
+  };
+  showToast('分享成功', msgs[platform] || '已分享 ✦', '📤');
+
+  // Social sharing gives energy reward
+  G.energy += 15;
+  saveGame();
+  updateUI();
+}
+
+// ============ Toast ============
+let toastTimer = null;
+function showToast(msg, sub, icon) {
+  const el = document.getElementById('toast');
+  const iconEl = document.getElementById('toastIcon');
+  const msgEl = document.getElementById('toastMsg');
+  const subEl = document.getElementById('toastSub');
+  if (!el) return;
+
+  if (toastTimer) clearTimeout(toastTimer);
+  iconEl.textContent = icon || '✨';
+  msgEl.textContent = msg;
+  subEl.textContent = sub || '';
+  el.style.display = 'block';
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'fadeInUp 0.3s ease-out';
+
+  toastTimer = setTimeout(() => {
+    el.style.display = 'none';
+  }, 2500);
+}
+
+// ============ Splash Entry ============
+function enterApp() {
+  document.getElementById('splash').classList.remove('active');
+  document.getElementById('home').classList.add('active');
+  loadGame();
+  updateUI();
+  renderQuests();
+
+  // Generate initial pet name on first visit
+  if (G.petLevel >= 2 && G.petName === '未孵化') {
+    const names = ['星尘','月华','烁光','灵汐','玄晶','岚影'];
+    G.petName = names[Math.floor(Math.random() * names.length)] + '晶灵';
+    saveGame();
+  }
+}
+
+// ============ Particles ============
+function createParticles() {
+  const container = document.getElementById('particles');
+  if (!container) return;
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 6 + 's';
+    p.style.animationDuration = (4 + Math.random() * 4) + 's';
+    p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+    p.style.opacity = 0.1 + Math.random() * 0.3;
+    container.appendChild(p);
+  }
+}
+
+// ============ Status bar time ============
+function updateTime() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const el = document.getElementById('statusTime');
+  if (el) el.textContent = h + ':' + m;
+}
+
+// ============ Init ============
+document.addEventListener('DOMContentLoaded', () => {
+  createParticles();
+  updateTime();
+  setInterval(updateTime, 10000);
+
+  // Check daily reset
+  loadGame();
+  const today = new Date().toDateString();
+  if (G.questsResetDay !== today) {
+    G.questsDone = [];
+    G.questsResetDay = today;
+    saveGame();
+  }
+
+  // Home button for evolution check
+  const evoCheck = setInterval(() => {
+    if (G && G.petLevel < 5) {
+      const nextStage = PET_STAGES[G.petLevel];
+      if (nextStage && G.energy >= nextStage.energyNeeded) {
+        // Show evolve option in actions
+        const actions = document.getElementById('actionButtons');
+        if (actions && !document.getElementById('evoActionBtn')) {
+          const btn = document.createElement('button');
+          btn.className = 'action-btn';
+          btn.id = 'evoActionBtn';
+          btn.style.background = 'linear-gradient(135deg,rgba(247,212,74,0.2),rgba(232,160,191,0.1))';
+          btn.style.borderColor = 'rgba(247,212,74,0.3)';
+          btn.innerHTML = '<span class="action-icon">✨</span><span>进化</span>';
+          btn.onclick = showEvolution;
+          actions.insertBefore(btn, actions.children[3]);
+        }
+      }
+    }
+  }, 2000);
+});
+</script>
+</body>
+</html>
